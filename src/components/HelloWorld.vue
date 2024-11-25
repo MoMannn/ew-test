@@ -4,7 +4,7 @@ import { parseEther, formatEther } from 'ethers';
 import { EmbeddedEthersSigner } from "@apillon/wallet-sdk";
 import { ref, watch, onMounted } from 'vue'
 const copyStatus = ref('Copy')
-const balance = ref(null)
+const balance = ref<string | null>(null)
 const { info } = useAccount();
 
 defineProps<{
@@ -59,8 +59,9 @@ async function getWalletBalance() {
     const signer = getSigner()
     const provider = await signer.provider
     const rawBalance = await provider.getBalance(info.address)
-    console.log(balance)
-    balance.value = formatEther(rawBalance)
+    console.log('Raw balance:', rawBalance)
+    const formattedBalance = formatEther(rawBalance)
+    balance.value = formattedBalance
   } catch (error) {
     console.error('Error fetching balance:', error)
     throw error
@@ -76,9 +77,8 @@ const signMessage = async () => {
     const signature = await signer.signMessage(message)
     signedMessage.value = signature
     console.log('Signed message:', signature)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error signing message:', error)
-    // Check if it's a user rejection
     if (error.message?.includes('User Rejected Request')) {
       signError.value = 'Message signing was rejected'
     } else {
@@ -121,7 +121,7 @@ const transferTokens = async () => {
     const provider = await signer.provider
     const receipt = await provider.waitForTransaction(transaction.hash)
     
-    transferStatus.value = `Transfer successful! Transaction hash: ${receipt.hash}`
+    transferStatus.value = `Transfer successful! Transaction hash: ${receipt?.hash}`
     
     // Clear inputs after successful transfer
     recipientAddress.value = ''
@@ -129,7 +129,7 @@ const transferTokens = async () => {
     
     // Refresh balance
     await getWalletBalance()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Transfer error:', error)
     if (error.message?.includes('User Rejected Request')) {
       transferError.value = 'Transaction was rejected'
